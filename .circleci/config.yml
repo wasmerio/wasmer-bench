@@ -1,0 +1,34 @@
+version: 2
+jobs:
+  # Job used for benchmarking
+  bench:
+    docker:
+      - image: circleci/rust:latest
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-bench-{{ arch }}-{{ checksum "Cargo.lock" }}
+      - run:
+          name: Install dependencies
+          command: |
+            sudo apt-get install -y cmake
+            curl -O https://releases.llvm.org/7.0.0/clang+llvm-7.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz
+            tar xf clang+llvm-7.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz
+      - run:
+          name: Build
+          command: |
+            export LLVM_SYS_70_PREFIX="`pwd`/clang+llvm-7.0.0-x86_64-linux-gnu-ubuntu-16.04/"
+            make build
+      - run:
+          name: Bench
+          command: |
+            export LLVM_SYS_70_PREFIX="`pwd`/clang+llvm-7.0.0-x86_64-linux-gnu-ubuntu-16.04/"
+            make bench
+      - save_cache:
+          paths:
+            - /usr/local/cargo/registry
+            - target/debug/.fingerprint
+            - target/debug/build
+            - target/debug/deps
+          key: v1-bench-{{ arch }}-{{ checksum "Cargo.lock" }}

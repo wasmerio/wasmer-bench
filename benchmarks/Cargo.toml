@@ -8,4 +8,4 @@ edition = "2018"
 crate-type = ["cdylib", "rlib", "staticlib"]
 
 [dependencies]
-
+sha1 = "0.6.0"

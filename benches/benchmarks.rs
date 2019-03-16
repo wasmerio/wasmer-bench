@@ -125,11 +125,38 @@ fn nbody_benchmark(c: &mut Criterion) {
     });
 }
 
-// criterion_group!(benches, compile_benchmark);
+fn sha1_benchmark(c: &mut Criterion) {
+    c.bench_function("native sha1", |b| {
+        b.iter(|| black_box(unsafe { wasm_bench_benchmarks::sha1(1000) }))
+    });
+
+    c.bench_function("clif func.call sha1", |b| {
+        let module = wasmer_runtime_core::compile_with(WASM, &CraneliftCompiler::new())
+            .expect("should compile");
+        let instance = module
+            .instantiate(&ImportObject::new())
+            .expect("should instantiate");
+        let func: Func<(i32)> = instance.func("sha1").unwrap();
+        b.iter(|| black_box(func.call(1000)))
+    });
+
+    c.bench_function("llvm func.call sha1", |b| {
+        let module =
+            wasmer_runtime_core::compile_with(WASM, &LLVMCompiler::new()).expect("should compile");
+        let instance = module
+            .instantiate(&ImportObject::new())
+            .expect("should instantiate");
+        let func: Func<(i32)> = instance.func("sha1").unwrap();
+        b.iter(|| black_box(func.call(1000)))
+    });
+}
+
+// criterion_group!(benches, sha1_benchmark);
 
 criterion_group!(
     benches,
     fib_benchmark,
+    sha1_benchmark,
     sum_benchmark,
     nbody_benchmark,
     compile_benchmark

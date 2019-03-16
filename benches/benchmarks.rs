@@ -14,30 +14,37 @@ static WASM: &'static [u8] = include_bytes!(
     "../benchmarks/target/wasm32-unknown-unknown/release/wasm_bench_benchmarks.wasm"
 );
 
-use criterion::black_box;
-use criterion::Criterion;
+use criterion::*;
 use wasm_bench_benchmarks;
 use wasmer_clif_backend::CraneliftCompiler;
 use wasmer_llvm_backend::LLVMCompiler;
 
 fn compile_benchmark(c: &mut Criterion) {
-    c.bench_function("clif compile benchmarks", |b| {
-        b.iter(|| {
-            black_box(
-                wasmer_runtime_core::compile_with(WASM, &CraneliftCompiler::new())
-                    .expect("should compile"),
-            )
+    c.bench(
+        "clif compile benchmark",
+        Benchmark::new("compile", |b| {
+            let compiler = &CraneliftCompiler::new();
+            b.iter(|| {
+                black_box(
+                    wasmer_runtime_core::compile_with(WASM, compiler).expect("should compile"),
+                )
+            })
         })
-    });
+        .throughput(Throughput::Bytes(WASM.len() as u32)),
+    );
 
-    c.bench_function("llvm compile benchmarks", |b| {
-        b.iter(|| {
-            black_box(
-                wasmer_runtime_core::compile_with(WASM, &LLVMCompiler::new())
-                    .expect("should compile"),
-            )
+    c.bench(
+        "llvm compile benchmark",
+        Benchmark::new("compile", |b| {
+            let compiler = &LLVMCompiler::new();
+            b.iter(|| {
+                black_box(
+                    wasmer_runtime_core::compile_with(WASM, compiler).expect("should compile"),
+                )
+            })
         })
-    });
+        .throughput(Throughput::Bytes(WASM.len() as u32)),
+    );
 }
 
 fn sum_benchmark(c: &mut Criterion) {
@@ -118,7 +125,7 @@ fn nbody_benchmark(c: &mut Criterion) {
     });
 }
 
-// criterion_group!(benches, nbody_benchmark);
+// criterion_group!(benches, compile_benchmark);
 
 criterion_group!(
     benches,

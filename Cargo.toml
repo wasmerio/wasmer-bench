@@ -1,0 +1,21 @@
+[package]
+name = "wasm-bench"
+version = "0.1.0"
+authors = ["The Wasmer Engineering Team <engineering@wasmer.io>"]
+edition = "2018"
+
+[dependencies]
+wasm-bench-benchmarks  = { path = "./benchmarks", version = "0.1.0" }
+wasmer-runtime-core = { git = "https://github.com/wasmerio/wasmer.git" }
+wasmer-llvm-backend = { git = "https://github.com/wasmerio/wasmer.git" }
+wasmer-clif-backend = { git = "https://github.com/wasmerio/wasmer.git" }
+# wasmer-runtime-core = { path = "../wasmer/lib/runtime-core" }
+# wasmer-llvm-backend = { path = "../wasmer/lib/llvm-backend" }
+# wasmer-clif-backend = { path = "../wasmer/lib/clif-backend" }
+
+[dev-dependencies]
+criterion = "0.2"
+
+[[bench]]
+name = "benchmarks"
+harness = false

@@ -55,8 +55,8 @@ def send_metric(name, value_nanos, tags):
 def get_metric_formatted(name, value_nanos, tags):
     unit = "nanos" if "sum" in name else "micros"
     value = value_nanos if "sum" in name else value_nanos / 1000
-    metric = ".benchmarks." + \
-        name.replace(" ", "_").replace(",", "_") + "_avg_" + unit
+    metric_name = name.replace(" ", "_").replace(",", "_") + "_avg_" + unit
+    metric = ".benches." + metric_name
     tags_str = []
     metric = metric + ";"
     for k, v in tags.items():

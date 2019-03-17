@@ -57,6 +57,10 @@ def get_metric_formatted(name, value_nanos, tags):
     value = value_nanos if "sum" in name else value_nanos / 1000
     metric_name = name.replace(" ", "_").replace(",", "_") + "_avg_" + unit
     metric = ".benches." + metric_name
+
+    build_num = os.environ["CIRCLE_BUILD_NUM"] if "CIRCLE_BUILD_NUM" in os.environ else None
+    if build_num is not None:
+        tags['build'] = build_num
     tags_str = []
     metric = metric + ";"
     for k, v in tags.items():

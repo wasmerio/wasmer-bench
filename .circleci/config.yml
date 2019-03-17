@@ -13,6 +13,7 @@ jobs:
           name: Install dependencies
           command: |
             rustup install nightly
+            rustup target add wasm32-unknown-unknown --toolchain nightly
             sudo apt-get install -y cmake
             curl -O https://releases.llvm.org/7.0.0/clang+llvm-7.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz
             tar xf clang+llvm-7.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz

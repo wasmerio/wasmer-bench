@@ -38,29 +38,33 @@ def get_average_nanos(benchmark, backend):
     return total_nanos / count
 
 
-def send_metric(name, value, tags):
+def send_metric(name, value_nanos, tags):
     print("Sending metric:")
     print(name)
 #     print(value)
 #     print(tags)
-    metric = get_metric_formatted(name, value, tags)
+    metric = get_metric_formatted(name, value_nanos, tags)
     import socket
     conn = socket.create_connection(
         (METRICS_HOST, 2003))
     conn.send(metric.encode())
     conn.close()
-    print(metric)
+#     print(metric)
 
 
-def get_metric_formatted(name, value, tags):
-    metric = METRICS_API_KEY + ".benchmark." + \
-        name.replace(" ", "_").replace(",", "_") + "_avg_nanos"
+def get_metric_formatted(name, value_nanos, tags):
+    unit = "nanos" if "sum" in name else "micros"
+    value = value_nanos if "sum" in name else value_nanos / 1000
+    metric = ".benchmark." + \
+        name.replace(" ", "_").replace(",", "_") + "_avg_" + unit
     tags_str = []
     metric = metric + ";"
     for k, v in tags.items():
         tags_str.append(k + "=" + v)
     metric = metric + ";".join(tags_str)
     metric = metric + " " + str(value) + "\n"
+    print(metric)
+    metric = METRICS_API_KEY + metric
     return metric
 
 

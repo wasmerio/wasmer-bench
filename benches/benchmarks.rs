@@ -1,10 +1,10 @@
 #[macro_use]
 extern crate criterion;
 
-extern crate wasmer_runtime_core;
-
 extern crate wasmer_clif_backend;
+extern crate wasmer_dynasm_backend;
 extern crate wasmer_llvm_backend;
+extern crate wasmer_runtime_core;
 
 use std::str;
 
@@ -21,6 +21,7 @@ static LARGE_WASM: &'static [u8] = include_bytes!("../benchmarks/src/lua.wasm");
 use criterion::*;
 use wasm_bench_benchmarks;
 use wasmer_clif_backend::CraneliftCompiler;
+use wasmer_dynasm_backend::SinglePassCompiler;
 use wasmer_llvm_backend::LLVMCompiler;
 
 fn compile_benchmark(c: &mut Criterion) {
@@ -45,6 +46,15 @@ fn compile_benchmark(c: &mut Criterion) {
                         .expect("should compile"),
                 )
             })
+        })
+        .with_function("dynasm", |b| {
+            let compiler = &SinglePassCompiler::new();
+            b.iter(|| {
+                black_box(
+                    wasmer_runtime_core::compile_with(SMALL_WASM, compiler)
+                        .expect("should compile"),
+                )
+            })
         }),
     );
 
@@ -63,6 +73,15 @@ fn compile_benchmark(c: &mut Criterion) {
         .throughput(Throughput::Bytes(LARGE_WASM.len() as u32))
         .with_function("llvm", |b| {
             let compiler = &LLVMCompiler::new();
+            b.iter(|| {
+                black_box(
+                    wasmer_runtime_core::compile_with(LARGE_WASM, compiler)
+                        .expect("should compile"),
+                )
+            })
+        })
+        .with_function("dynasm", |b| {
+            let compiler = &SinglePassCompiler::new();
             b.iter(|| {
                 black_box(
                     wasmer_runtime_core::compile_with(LARGE_WASM, compiler)
@@ -96,6 +115,15 @@ fn sum_benchmark(c: &mut Criterion) {
                 .expect("should instantiate");
             let sum: Func<(i32, i32), i32> = instance.func("sum").unwrap();
             b.iter(|| black_box(sum.call(1, 2)))
+        })
+        .with_function("dynasm", |b| {
+            let module = wasmer_runtime_core::compile_with(WASM, &SinglePassCompiler::new())
+                .expect("should compile");
+            let instance = module
+                .instantiate(&ImportObject::new())
+                .expect("should instantiate");
+            let sum: Func<(i32, i32), i32> = instance.func("sum").unwrap();
+            b.iter(|| black_box(sum.call(1, 2)))
         }),
     );
 }
@@ -117,6 +145,15 @@ fn fib_benchmark(c: &mut Criterion) {
         })
         .with_function("llvm", |b| {
             let module = wasmer_runtime_core::compile_with(WASM, &LLVMCompiler::new())
+                .expect("should compile");
+            let instance = module
+                .instantiate(&ImportObject::new())
+                .expect("should instantiate");
+            let fib: Func<(i64), i64> = instance.func("fib").unwrap();
+            b.iter(|| black_box(fib.call(30)))
+        })
+        .with_function("dynasm", |b| {
+            let module = wasmer_runtime_core::compile_with(WASM, &SinglePassCompiler::new())
                 .expect("should compile");
             let instance = module
                 .instantiate(&ImportObject::new())
@@ -150,6 +187,15 @@ fn nbody_benchmark(c: &mut Criterion) {
                 .expect("should instantiate");
             let func: Func<(i32)> = instance.func("bench").unwrap();
             b.iter(|| black_box(func.call(5000)))
+        })
+        .with_function("dynasm", |b| {
+            let module = wasmer_runtime_core::compile_with(WASM, &SinglePassCompiler::new())
+                .expect("should compile");
+            let instance = module
+                .instantiate(&ImportObject::new())
+                .expect("should instantiate");
+            let func: Func<(i32)> = instance.func("bench").unwrap();
+            b.iter(|| black_box(func.call(5000)))
         }),
     );
 }
@@ -171,6 +217,15 @@ fn sha1_benchmark(c: &mut Criterion) {
         })
         .with_function("llvm", |b| {
             let module = wasmer_runtime_core::compile_with(WASM, &LLVMCompiler::new())
+                .expect("should compile");
+            let instance = module
+                .instantiate(&ImportObject::new())
+                .expect("should instantiate");
+            let func: Func<(i32)> = instance.func("sha1").unwrap();
+            b.iter(|| black_box(func.call(1000)))
+        })
+        .with_function("dynasm", |b| {
+            let module = wasmer_runtime_core::compile_with(WASM, &SinglePassCompiler::new())
                 .expect("should compile");
             let instance = module
                 .instantiate(&ImportObject::new())

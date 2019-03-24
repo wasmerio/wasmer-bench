@@ -7,11 +7,14 @@ edition = "2018"
 [dependencies]
 wasm-bench-benchmarks  = { path = "./benchmarks", version = "0.1.0" }
 wasmer-runtime-core = { git = "https://github.com/wasmerio/wasmer.git" }
-wasmer-llvm-backend = { git = "https://github.com/wasmerio/wasmer.git" }
+wasmer-llvm-backend = { git = "https://github.com/wasmerio/wasmer.git"  }
 wasmer-clif-backend = { git = "https://github.com/wasmerio/wasmer.git" }
+wasmer-dynasm-backend = { git = "https://github.com/wasmerio/wasmer.git" }
+# For testing local wasmer checkout
 # wasmer-runtime-core = { path = "../wasmer/lib/runtime-core" }
 # wasmer-llvm-backend = { path = "../wasmer/lib/llvm-backend" }
 # wasmer-clif-backend = { path = "../wasmer/lib/clif-backend" }
+# wasmer-dynasm-backend = { path = "../wasmer/lib/dynasm-backend"  }
 
 [dev-dependencies]
 criterion = "0.2"

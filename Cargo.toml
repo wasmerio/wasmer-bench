@@ -15,6 +15,7 @@ wasmer-dynasm-backend = { git = "https://github.com/wasmerio/wasmer.git" }
 # wasmer-llvm-backend = { path = "../wasmer/lib/llvm-backend" }
 # wasmer-clif-backend = { path = "../wasmer/lib/clif-backend" }
 # wasmer-dynasm-backend = { path = "../wasmer/lib/dynasm-backend"  }
+wasmi = "0.4.4"
 
 [dev-dependencies]
 criterion = "0.2"

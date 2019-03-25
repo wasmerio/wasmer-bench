@@ -5,7 +5,7 @@ import os
 BENCHMARK_OUT_DIR = "target/criterion"
 BENCHMARKS = ["small compile benchmark",
               "large compile benchmark", "fib 30", "sha1", "sum 1, 2", "nbody"]
-BACKENDS = ["clif", "native", "llvm", "dynasm"]
+BACKENDS = ["clif", "native", "llvm", "dynasm", "wasmi"]
 
 METRICS_API_KEY = os.environ['METRICS_API_KEY']
 METRICS_HOST = os.environ['METRICS_HOST']
@@ -20,6 +20,8 @@ def main():
 
 def report_metric(benchmark, backend):
     if backend == "native" and "compile" in benchmark:
+        return
+    if backend == "wasmi" and "compile" in benchmark:
         return
     avg_nanos = get_average_nanos(benchmark, backend)
     tags = {'backend': backend}

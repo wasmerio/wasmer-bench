@@ -4,6 +4,9 @@ version = "0.1.0"
 authors = ["The Wasmer Engineering Team <engineering@wasmer.io>"]
 edition = "2018"
 
+[lib]
+crate-type = ["rlib"]
+
 [dependencies]
 wasm-bench-benchmarks  = { path = "./benchmarks", version = "0.1.0" }
 wasmer-runtime-core = { git = "https://github.com/wasmerio/wasmer.git" }
@@ -16,6 +19,7 @@ wasmer-dynasm-backend = { git = "https://github.com/wasmerio/wasmer.git" }
 # wasmer-clif-backend = { path = "../wasmer/lib/clif-backend" }
 # wasmer-dynasm-backend = { path = "../wasmer/lib/dynasm-backend"  }
 wasmi = "0.4.4"
+rust-wasm-c-api = { path = "./rust-wasm-c-api", optional = true }
 
 [dev-dependencies]
 criterion = "0.2"
@@ -23,3 +27,8 @@ criterion = "0.2"
 [[bench]]
 name = "benchmarks"
 harness = false
+
+[features]
+v8 = ["rust-wasm-c-api"]
+
+

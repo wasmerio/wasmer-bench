@@ -1,0 +1,11 @@
+[package]
+name = "rust-wasm-c-api"
+version = "0.1.0"
+authors = ["The Wasmer Engineering Team <engineering@wasmer.io>"]
+edition = "2018"
+
+[dependencies]
+libc = "0.2.0"
+
+[build-dependencies]
+bindgen = "0.42.2"

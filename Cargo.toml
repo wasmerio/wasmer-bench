@@ -18,7 +18,7 @@ wasmer-dynasm-backend = { git = "https://github.com/wasmerio/wasmer.git" }
 # wasmer-llvm-backend = { path = "../wasmer/lib/llvm-backend" }
 # wasmer-clif-backend = { path = "../wasmer/lib/clif-backend" }
 # wasmer-dynasm-backend = { path = "../wasmer/lib/dynasm-backend"  }
-wasmi = "0.4.4"
+wasmi = { version = "0.4.4", optional = true }
 rust-wasm-c-api = { path = "./rust-wasm-c-api", optional = true }
 
 [dev-dependencies]
@@ -30,5 +30,5 @@ harness = false
 
 [features]
 v8 = ["rust-wasm-c-api"]
-
+bench-wasmi = ["wasmi"]
 

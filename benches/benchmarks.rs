@@ -11,6 +11,7 @@ extern crate wasmer_dynasm_backend;
 extern crate wasmer_llvm_backend;
 extern crate wasmer_runtime_core;
 
+#[cfg(feature = "bench-wasmi")]
 extern crate wasmi;
 
 use std::str;
@@ -30,6 +31,8 @@ use wasm_bench_benchmarks;
 use wasmer_clif_backend::CraneliftCompiler;
 use wasmer_dynasm_backend::SinglePassCompiler;
 use wasmer_llvm_backend::LLVMCompiler;
+
+#[cfg(feature = "bench-wasmi")]
 use wasmi::{ImportsBuilder, ModuleInstance, NopExternals, RuntimeValue};
 
 fn compile_benchmark(c: &mut Criterion) {
@@ -137,19 +140,6 @@ fn sum_benchmark(c: &mut Criterion) {
         let sum: Func<(i32, i32), i32> = instance.func("sum").unwrap();
         b.iter(|| black_box(sum.call(1, 2)))
     })
-    .with_function("wasmi", |b| {
-        let module = wasmi::Module::from_buffer(WASM).expect("error loading wasm");
-        let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
-            .expect("error instantiating module")
-            .assert_no_start();
-        b.iter(|| {
-            black_box(instance.invoke_export(
-                "sum",
-                &[RuntimeValue::I32(1), RuntimeValue::I32(2)],
-                &mut NopExternals,
-            ))
-        })
-    })
     .with_function("dynasm", |b| {
         let module = wasmer_runtime_core::compile_with(WASM, &SinglePassCompiler::new())
             .expect("should compile");
@@ -159,6 +149,23 @@ fn sum_benchmark(c: &mut Criterion) {
         let sum: Func<(i32, i32), i32> = instance.func("sum").unwrap();
         b.iter(|| black_box(sum.call(1, 2)))
     });
+
+    #[cfg(feature = "bench-wasmi")]
+    {
+        benchmark = benchmark.with_function("wasmi", |b| {
+            let module = wasmi::Module::from_buffer(WASM).expect("error loading wasm");
+            let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
+                .expect("error instantiating module")
+                .assert_no_start();
+            b.iter(|| {
+                black_box(instance.invoke_export(
+                    "sum",
+                    &[RuntimeValue::I32(1), RuntimeValue::I32(2)],
+                    &mut NopExternals,
+                ))
+            })
+        });
+    }
 
     #[cfg(feature = "v8")]
     {
@@ -224,7 +231,6 @@ fn fib_benchmark(c: &mut Criterion) {
     let mut benchmark = Benchmark::new("native", |b| {
         b.iter(|| black_box(wasm_bench_benchmarks::fib(30)))
     })
-    .sample_size(25)
     .with_function("clif", |b| {
         let module = wasmer_runtime_core::compile_with(WASM, &CraneliftCompiler::new())
             .expect("should compile");
@@ -243,15 +249,6 @@ fn fib_benchmark(c: &mut Criterion) {
         let fib: Func<(i64), i64> = instance.func("fib").unwrap();
         b.iter(|| black_box(fib.call(30)))
     })
-    .with_function("wasmi", |b| {
-        let module = wasmi::Module::from_buffer(WASM).expect("error loading wasm");
-        let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
-            .expect("error instantiating module")
-            .assert_no_start();
-        b.iter(|| {
-            black_box(instance.invoke_export("fib", &[RuntimeValue::I64(30)], &mut NopExternals))
-        })
-    })
     .with_function("dynasm", |b| {
         let module = wasmer_runtime_core::compile_with(WASM, &SinglePassCompiler::new())
             .expect("should compile");
@@ -262,7 +259,24 @@ fn fib_benchmark(c: &mut Criterion) {
         b.iter(|| black_box(fib.call(30)))
     });
 
-       #[cfg(feature = "v8")]
+    #[cfg(feature = "bench-wasmi")]
+    {
+        benchmark = benchmark.sample_size(25).with_function("wasmi", |b| {
+            let module = wasmi::Module::from_buffer(WASM).expect("error loading wasm");
+            let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
+                .expect("error instantiating module")
+                .assert_no_start();
+            b.iter(|| {
+                black_box(instance.invoke_export(
+                    "fib",
+                    &[RuntimeValue::I64(30)],
+                    &mut NopExternals,
+                ))
+            })
+        });
+    }
+
+    #[cfg(feature = "v8")]
     {
         use wasm_c_api_support::WasmCApiEnv;
         unsafe {
@@ -321,7 +335,6 @@ fn nbody_benchmark(c: &mut Criterion) {
     let mut benchmark = Benchmark::new("native", |b| {
         b.iter(|| black_box(unsafe { wasm_bench_benchmarks::nbody::bench(5000) }))
     })
-    .sample_size(25)
     .with_function("clif", |b| {
         let module = wasmer_runtime_core::compile_with(WASM, &CraneliftCompiler::new())
             .expect("should compile");
@@ -340,19 +353,6 @@ fn nbody_benchmark(c: &mut Criterion) {
         let func: Func<(i32)> = instance.func("bench").unwrap();
         b.iter(|| black_box(func.call(5000)))
     })
-    .with_function("wasmi", |b| {
-        let module = wasmi::Module::from_buffer(WASM).expect("error loading wasm");
-        let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
-            .expect("error instantiating module")
-            .assert_no_start();
-        b.iter(|| {
-            black_box(instance.invoke_export(
-                "bench",
-                &[RuntimeValue::I32(5000)],
-                &mut NopExternals,
-            ))
-        })
-    })
     .with_function("dynasm", |b| {
         let module = wasmer_runtime_core::compile_with(WASM, &SinglePassCompiler::new())
             .expect("should compile");
@@ -363,7 +363,24 @@ fn nbody_benchmark(c: &mut Criterion) {
         b.iter(|| black_box(func.call(5000)))
     });
 
-        #[cfg(feature = "v8")]
+    #[cfg(feature = "bench-wasmi")]
+    {
+        benchmark = benchmark.sample_size(25).with_function("wasmi", |b| {
+            let module = wasmi::Module::from_buffer(WASM).expect("error loading wasm");
+            let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
+                .expect("error instantiating module")
+                .assert_no_start();
+            b.iter(|| {
+                black_box(instance.invoke_export(
+                    "bench",
+                    &[RuntimeValue::I32(5000)],
+                    &mut NopExternals,
+                ))
+            })
+        });
+    }
+
+    #[cfg(feature = "v8")]
     {
         use wasm_c_api_support::WasmCApiEnv;
         unsafe {
@@ -410,7 +427,6 @@ fn nbody_benchmark(c: &mut Criterion) {
         }
     }
 
-
     c.bench("nbody", benchmark);
 }
 
@@ -418,7 +434,6 @@ fn sha1_benchmark(c: &mut Criterion) {
     let mut benchmark = Benchmark::new("native", |b| {
         b.iter(|| black_box(unsafe { wasm_bench_benchmarks::sha1(1000) }))
     })
-    .sample_size(20)
     .with_function("clif", |b| {
         let module = wasmer_runtime_core::compile_with(WASM, &CraneliftCompiler::new())
             .expect("should compile");
@@ -437,15 +452,6 @@ fn sha1_benchmark(c: &mut Criterion) {
         let func: Func<(i32)> = instance.func("sha1").unwrap();
         b.iter(|| black_box(func.call(1000)))
     })
-    .with_function("wasmi", |b| {
-        let module = wasmi::Module::from_buffer(WASM).expect("error loading wasm");
-        let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
-            .expect("error instantiating module")
-            .assert_no_start();
-        b.iter(|| {
-            black_box(instance.invoke_export("sha1", &[RuntimeValue::I32(1000)], &mut NopExternals))
-        })
-    })
     .with_function("dynasm", |b| {
         let module = wasmer_runtime_core::compile_with(WASM, &SinglePassCompiler::new())
             .expect("should compile");
@@ -455,6 +461,23 @@ fn sha1_benchmark(c: &mut Criterion) {
         let func: Func<(i32)> = instance.func("sha1").unwrap();
         b.iter(|| black_box(func.call(1000)))
     });
+
+    #[cfg(feature = "bench-wasmi")]
+    {
+        benchmark = benchmark.sample_size(20).with_function("wasmi", |b| {
+            let module = wasmi::Module::from_buffer(WASM).expect("error loading wasm");
+            let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
+                .expect("error instantiating module")
+                .assert_no_start();
+            b.iter(|| {
+                black_box(instance.invoke_export(
+                    "sha1",
+                    &[RuntimeValue::I32(1000)],
+                    &mut NopExternals,
+                ))
+            })
+        });
+    }
 
     #[cfg(feature = "v8")]
     {

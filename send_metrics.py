@@ -5,7 +5,7 @@ import os
 BENCHMARK_OUT_DIR = "target/criterion"
 BENCHMARKS = ["small compile benchmark",
               "large compile benchmark", "fib 30", "sha1", "sum 1, 2", "nbody"]
-BACKENDS = ["clif", "native", "llvm", "dynasm", "wasmi"]
+BACKENDS = ["clif", "native", "llvm", "dynasm"]
 
 METRICS_API_KEY = os.environ['METRICS_API_KEY']
 METRICS_HOST = os.environ['METRICS_HOST']

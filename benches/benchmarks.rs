@@ -191,7 +191,7 @@ fn sum_benchmark(c: &mut Criterion) {
             let data = exports.data;
             let size = exports.size;
             let exports_slice = slice::from_raw_parts(data, size);
-            let v8_func = wasm_extern_as_func(exports_slice[3]);
+            let v8_func = wasm_extern_as_func(exports_slice[4]);
             let env = WasmCApiEnv {
                 engine,
                 store,
@@ -300,7 +300,7 @@ fn fib_benchmark(c: &mut Criterion) {
             let data = exports.data;
             let size = exports.size;
             let exports_slice = slice::from_raw_parts(data, size);
-            let v8_func = wasm_extern_as_func(exports_slice[4]);
+            let v8_func = wasm_extern_as_func(exports_slice[5]);
             let env = WasmCApiEnv {
                 engine,
                 store,
@@ -404,7 +404,7 @@ fn nbody_benchmark(c: &mut Criterion) {
             let data = exports.data;
             let size = exports.size;
             let exports_slice = slice::from_raw_parts(data, size);
-            let v8_func = wasm_extern_as_func(exports_slice[7]);
+            let v8_func = wasm_extern_as_func(exports_slice[8]);
             let env = WasmCApiEnv {
                 engine,
                 store,
@@ -428,6 +428,105 @@ fn nbody_benchmark(c: &mut Criterion) {
     }
 
     c.bench("nbody", benchmark);
+}
+
+fn fannkuck_benchmark(c: &mut Criterion) {
+    let mut benchmark = Benchmark::new("native", |b| {
+        b.iter(|| black_box(unsafe { wasm_bench_benchmarks::fannkuch_steps(10) }))
+    })
+    .with_function("clif", |b| {
+        let module = wasmer_runtime_core::compile_with(WASM, &CraneliftCompiler::new())
+            .expect("should compile");
+        let instance = module
+            .instantiate(&ImportObject::new())
+            .expect("should instantiate");
+        let func: Func<(i32)> = instance.func("fannkuch_steps").unwrap();
+        b.iter(|| black_box(func.call(5)))
+    })
+    .with_function("llvm", |b| {
+        let module =
+            wasmer_runtime_core::compile_with(WASM, &LLVMCompiler::new()).expect("should compile");
+        let instance = module
+            .instantiate(&ImportObject::new())
+            .expect("should instantiate");
+        let func: Func<(i32)> = instance.func("fannkuch_steps").unwrap();
+        b.iter(|| black_box(func.call(5)))
+    })
+    .with_function("dynasm", |b| {
+        let module = wasmer_runtime_core::compile_with(WASM, &SinglePassCompiler::new())
+            .expect("should compile");
+        let instance = module
+            .instantiate(&ImportObject::new())
+            .expect("should instantiate");
+        let func: Func<(i32)> = instance.func("fannkuch_steps").unwrap();
+        b.iter(|| black_box(func.call(5)))
+    });
+
+    #[cfg(feature = "bench-wasmi")]
+    {
+        benchmark = benchmark.sample_size(25).with_function("wasmi", |b| {
+            let module = wasmi::Module::from_buffer(WASM).expect("error loading wasm");
+            let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
+                .expect("error instantiating module")
+                .assert_no_start();
+            b.iter(|| {
+                black_box(instance.invoke_export(
+                    "fannkuch_steps",
+                    &[RuntimeValue::I32(5)],
+                    &mut NopExternals,
+                ))
+            })
+        });
+    }
+
+    #[cfg(feature = "v8")]
+    {
+        use wasm_c_api_support::WasmCApiEnv;
+        unsafe {
+            use std::mem;
+            use std::slice;
+            // Instantiate wasm file
+            let engine = wasm_engine_new();
+            let store = wasm_store_new(engine);
+            let mut byte_vec = WASM.to_vec();
+            let bytes_slice: &mut [u8] = byte_vec.as_mut_slice();
+            let len = bytes_slice.len();
+            let bytes = wasm_byte_vec_t {
+                size: len,
+                data: bytes_slice.as_mut_ptr() as _,
+            };
+            let module = wasm_module_new(store, &bytes as *const wasm_byte_vec_t);
+            let imports = &[];
+            let instance = wasm_instance_new(store, module, imports.as_ptr());
+            let mut exports: wasm_extern_vec_t = mem::uninitialized();
+            wasm_instance_exports(instance, &mut exports as *mut wasm_extern_vec_t);
+            let data = exports.data;
+            let size = exports.size;
+            let exports_slice = slice::from_raw_parts(data, size);
+            let v8_func = wasm_extern_as_func(exports_slice[3]);
+            let env = WasmCApiEnv {
+                engine,
+                store,
+                module,
+                instance,
+                exports: &mut exports as *mut wasm_extern_vec_t,
+            };
+
+            benchmark = benchmark.with_function("v8", move |b| {
+                let _env = &env;
+                let val1 = wasm_val_t__bindgen_ty_1 { i32: 5 };
+                let arg1 = wasm_val_t {
+                    kind: wasm_valkind_t_WASM_I32,
+                    of: val1,
+                };
+                let args = [arg1];
+                let results: &mut [wasm_val_t] = &mut [];
+                b.iter(|| black_box(wasm_func_call(v8_func, args.as_ptr(), results.as_mut_ptr())))
+            });
+        }
+    }
+
+    c.bench("fannkuch", benchmark);
 }
 
 fn sha1_benchmark(c: &mut Criterion) {
@@ -503,7 +602,7 @@ fn sha1_benchmark(c: &mut Criterion) {
             let data = exports.data;
             let size = exports.size;
             let exports_slice = slice::from_raw_parts(data, size);
-            let v8_func = wasm_extern_as_func(exports_slice[8]);
+            let v8_func = wasm_extern_as_func(exports_slice[9]);
             let env = WasmCApiEnv {
                 engine,
                 store,
@@ -529,7 +628,7 @@ fn sha1_benchmark(c: &mut Criterion) {
     c.bench("sha1", benchmark);
 }
 
-// criterion_group!(benches, nbody_benchmark);
+// criterion_group!(benches, fannkuck_benchmark);
 
 criterion_group!(
     benches,

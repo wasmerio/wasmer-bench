@@ -300,7 +300,7 @@ fn fib_benchmark(c: &mut Criterion) {
             let data = exports.data;
             let size = exports.size;
             let exports_slice = slice::from_raw_parts(data, size);
-            let v8_func = wasm_extern_as_func(exports_slice[5]);
+            let v8_func = wasm_extern_as_func(exports_slice[6]);
             let env = WasmCApiEnv {
                 engine,
                 store,
@@ -333,7 +333,7 @@ fn fib_benchmark(c: &mut Criterion) {
 
 fn nbody_benchmark(c: &mut Criterion) {
     let mut benchmark = Benchmark::new("native", |b| {
-        b.iter(|| black_box(unsafe { wasm_bench_benchmarks::nbody::bench(5000) }))
+        b.iter(|| black_box(unsafe { wasm_bench_benchmarks::nbody::nbody_bench(5000) }))
     })
     .with_function("clif", |b| {
         let module = wasmer_runtime_core::compile_with(WASM, &CraneliftCompiler::new())
@@ -341,7 +341,7 @@ fn nbody_benchmark(c: &mut Criterion) {
         let instance = module
             .instantiate(&ImportObject::new())
             .expect("should instantiate");
-        let func: Func<(i32)> = instance.func("bench").unwrap();
+        let func: Func<(i32)> = instance.func("nbody_bench").unwrap();
         b.iter(|| black_box(func.call(5000)))
     })
     .with_function("llvm", |b| {
@@ -350,7 +350,7 @@ fn nbody_benchmark(c: &mut Criterion) {
         let instance = module
             .instantiate(&ImportObject::new())
             .expect("should instantiate");
-        let func: Func<(i32)> = instance.func("bench").unwrap();
+        let func: Func<(i32)> = instance.func("nbody_bench").unwrap();
         b.iter(|| black_box(func.call(5000)))
     })
     .with_function("dynasm", |b| {
@@ -359,7 +359,7 @@ fn nbody_benchmark(c: &mut Criterion) {
         let instance = module
             .instantiate(&ImportObject::new())
             .expect("should instantiate");
-        let func: Func<(i32)> = instance.func("bench").unwrap();
+        let func: Func<(i32)> = instance.func("nbody_bench").unwrap();
         b.iter(|| black_box(func.call(5000)))
     });
 
@@ -372,7 +372,7 @@ fn nbody_benchmark(c: &mut Criterion) {
                 .assert_no_start();
             b.iter(|| {
                 black_box(instance.invoke_export(
-                    "bench",
+                    "nbody_bench",
                     &[RuntimeValue::I32(5000)],
                     &mut NopExternals,
                 ))
@@ -404,7 +404,7 @@ fn nbody_benchmark(c: &mut Criterion) {
             let data = exports.data;
             let size = exports.size;
             let exports_slice = slice::from_raw_parts(data, size);
-            let v8_func = wasm_extern_as_func(exports_slice[8]);
+            let v8_func = wasm_extern_as_func(exports_slice[5]);
             let env = WasmCApiEnv {
                 engine,
                 store,
@@ -503,7 +503,7 @@ fn fannkuck_benchmark(c: &mut Criterion) {
             let data = exports.data;
             let size = exports.size;
             let exports_slice = slice::from_raw_parts(data, size);
-            let v8_func = wasm_extern_as_func(exports_slice[3]);
+            let v8_func = wasm_extern_as_func(exports_slice[8]);
             let env = WasmCApiEnv {
                 engine,
                 store,

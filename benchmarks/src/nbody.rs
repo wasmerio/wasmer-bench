@@ -168,7 +168,7 @@ pub unsafe extern "C" fn step() -> f64 {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn bench(steps: i32) {
+pub unsafe extern "C" fn nbody_bench(steps: i32) {
     for _ in 0..steps {
         advance(&mut BODIES, 0.01);
     }

@@ -36,7 +36,7 @@ use wasmer_llvm_backend::LLVMCompiler;
 use wasmi::{ImportsBuilder, ModuleInstance, NopExternals, RuntimeValue};
 
 fn compile_benchmark(c: &mut Criterion) {
-    let mut small_benchmark = Benchmark::new("clif", |b| {
+    let mut small_benchmark = Benchmark::new("wasmer-clif", |b| {
         let compiler = &CraneliftCompiler::new();
         b.iter(|| {
             black_box(
@@ -46,7 +46,7 @@ fn compile_benchmark(c: &mut Criterion) {
     })
     .sample_size(10)
     .throughput(Throughput::Bytes(SMALL_WASM.len() as u32))
-    .with_function("llvm", |b| {
+    .with_function("wasmer-llvm", |b| {
         let compiler = &LLVMCompiler::new();
         b.iter(|| {
             black_box(
@@ -54,7 +54,7 @@ fn compile_benchmark(c: &mut Criterion) {
             )
         })
     })
-    .with_function("dynasm", |b| {
+    .with_function("wasmer-dynasm", |b| {
         let compiler = &SinglePassCompiler::new();
         b.iter(|| {
             black_box(
@@ -63,9 +63,9 @@ fn compile_benchmark(c: &mut Criterion) {
         })
     });
 
-    c.bench("small compile benchmark", small_benchmark);
+    c.bench("small_compile", small_benchmark);
 
-    let mut large_benchmark = Benchmark::new("clif", |b| {
+    let mut large_benchmark = Benchmark::new("wasmer-clif", |b| {
         let compiler = &CraneliftCompiler::new();
         b.iter(|| {
             black_box(
@@ -75,7 +75,7 @@ fn compile_benchmark(c: &mut Criterion) {
     })
     .sample_size(2)
     .throughput(Throughput::Bytes(LARGE_WASM.len() as u32))
-    .with_function("llvm", |b| {
+    .with_function("wasmer-llvm", |b| {
         let compiler = &LLVMCompiler::new();
         b.iter(|| {
             black_box(
@@ -83,7 +83,7 @@ fn compile_benchmark(c: &mut Criterion) {
             )
         })
     })
-    .with_function("dynasm", |b| {
+    .with_function("wasmer-dynasm", |b| {
         let compiler = &SinglePassCompiler::new();
         b.iter(|| {
             black_box(
@@ -92,7 +92,7 @@ fn compile_benchmark(c: &mut Criterion) {
         })
     });
 
-    c.bench("large compile benchmark", large_benchmark);
+    c.bench("large_compile", large_benchmark);
 }
 
 #[cfg(feature = "v8")]
@@ -119,10 +119,10 @@ mod wasm_c_api_support {
 }
 
 fn sum_benchmark(c: &mut Criterion) {
-    let mut benchmark = Benchmark::new("native", |b| {
+    let mut benchmark = Benchmark::new("rust-native", |b| {
         b.iter(|| black_box(wasm_bench_benchmarks::sum(1, 2)))
     })
-    .with_function("clif", |b| {
+    .with_function("wasmer-clif", |b| {
         let module = wasmer_runtime_core::compile_with(WASM, &CraneliftCompiler::new())
             .expect("should compile");
         let instance = module
@@ -131,7 +131,7 @@ fn sum_benchmark(c: &mut Criterion) {
         let sum: Func<(i32, i32), i32> = instance.func("sum").unwrap();
         b.iter(|| black_box(sum.call(1, 2)))
     })
-    .with_function("llvm", |b| {
+    .with_function("wasmer-llvm", |b| {
         let module =
             wasmer_runtime_core::compile_with(WASM, &LLVMCompiler::new()).expect("should compile");
         let instance = module
@@ -140,7 +140,7 @@ fn sum_benchmark(c: &mut Criterion) {
         let sum: Func<(i32, i32), i32> = instance.func("sum").unwrap();
         b.iter(|| black_box(sum.call(1, 2)))
     })
-    .with_function("dynasm", |b| {
+    .with_function("wasmer-dynasm", |b| {
         let module = wasmer_runtime_core::compile_with(WASM, &SinglePassCompiler::new())
             .expect("should compile");
         let instance = module
@@ -200,7 +200,7 @@ fn sum_benchmark(c: &mut Criterion) {
                 exports: &mut exports as *mut wasm_extern_vec_t,
             };
 
-            benchmark = benchmark.with_function("v8", move |b| {
+            benchmark = benchmark.with_function("wasm-c-api-v8", move |b| {
                 let _env = &env;
                 let val1 = wasm_val_t__bindgen_ty_1 { i32: 3 };
                 let arg1 = wasm_val_t {
@@ -224,14 +224,14 @@ fn sum_benchmark(c: &mut Criterion) {
         }
     }
 
-    c.bench("sum 1, 2", benchmark);
+    c.bench("sum", benchmark);
 }
 
 fn fib_benchmark(c: &mut Criterion) {
-    let mut benchmark = Benchmark::new("native", |b| {
+    let mut benchmark = Benchmark::new("rust-native", |b| {
         b.iter(|| black_box(wasm_bench_benchmarks::fib(30)))
     })
-    .with_function("clif", |b| {
+    .with_function("wasmer-clif", |b| {
         let module = wasmer_runtime_core::compile_with(WASM, &CraneliftCompiler::new())
             .expect("should compile");
         let instance = module
@@ -240,7 +240,7 @@ fn fib_benchmark(c: &mut Criterion) {
         let fib: Func<(i64), i64> = instance.func("fib").unwrap();
         b.iter(|| black_box(fib.call(30)))
     })
-    .with_function("llvm", |b| {
+    .with_function("wasmer-llvm", |b| {
         let module =
             wasmer_runtime_core::compile_with(WASM, &LLVMCompiler::new()).expect("should compile");
         let instance = module
@@ -249,7 +249,7 @@ fn fib_benchmark(c: &mut Criterion) {
         let fib: Func<(i64), i64> = instance.func("fib").unwrap();
         b.iter(|| black_box(fib.call(30)))
     })
-    .with_function("dynasm", |b| {
+    .with_function("wasmer-dynasm", |b| {
         let module = wasmer_runtime_core::compile_with(WASM, &SinglePassCompiler::new())
             .expect("should compile");
         let instance = module
@@ -309,7 +309,7 @@ fn fib_benchmark(c: &mut Criterion) {
                 exports: &mut exports as *mut wasm_extern_vec_t,
             };
 
-            benchmark = benchmark.with_function("v8", move |b| {
+            benchmark = benchmark.with_function("wasm-c-api-v8", move |b| {
                 let _env = &env;
                 let val1 = wasm_val_t__bindgen_ty_1 { i64: 30 };
                 let arg1 = wasm_val_t {
@@ -328,14 +328,14 @@ fn fib_benchmark(c: &mut Criterion) {
         }
     }
 
-    c.bench("fib 30", benchmark);
+    c.bench("fibonacci", benchmark);
 }
 
 fn nbody_benchmark(c: &mut Criterion) {
-    let mut benchmark = Benchmark::new("native", |b| {
+    let mut benchmark = Benchmark::new("rust-native", |b| {
         b.iter(|| black_box(unsafe { wasm_bench_benchmarks::nbody::nbody_bench(5000) }))
     })
-    .with_function("clif", |b| {
+    .with_function("wasmer-clif", |b| {
         let module = wasmer_runtime_core::compile_with(WASM, &CraneliftCompiler::new())
             .expect("should compile");
         let instance = module
@@ -344,7 +344,7 @@ fn nbody_benchmark(c: &mut Criterion) {
         let func: Func<(i32)> = instance.func("nbody_bench").unwrap();
         b.iter(|| black_box(func.call(5000)))
     })
-    .with_function("llvm", |b| {
+    .with_function("wasmer-llvm", |b| {
         let module =
             wasmer_runtime_core::compile_with(WASM, &LLVMCompiler::new()).expect("should compile");
         let instance = module
@@ -353,7 +353,7 @@ fn nbody_benchmark(c: &mut Criterion) {
         let func: Func<(i32)> = instance.func("nbody_bench").unwrap();
         b.iter(|| black_box(func.call(5000)))
     })
-    .with_function("dynasm", |b| {
+    .with_function("wasmer-dynasm", |b| {
         let module = wasmer_runtime_core::compile_with(WASM, &SinglePassCompiler::new())
             .expect("should compile");
         let instance = module
@@ -413,7 +413,7 @@ fn nbody_benchmark(c: &mut Criterion) {
                 exports: &mut exports as *mut wasm_extern_vec_t,
             };
 
-            benchmark = benchmark.with_function("v8", move |b| {
+            benchmark = benchmark.with_function("wasm-c-api-v8", move |b| {
                 let _env = &env;
                 let val1 = wasm_val_t__bindgen_ty_1 { i32: 5000 };
                 let arg1 = wasm_val_t {
@@ -431,10 +431,10 @@ fn nbody_benchmark(c: &mut Criterion) {
 }
 
 fn fannkuck_benchmark(c: &mut Criterion) {
-    let mut benchmark = Benchmark::new("native", |b| {
-        b.iter(|| black_box(unsafe { wasm_bench_benchmarks::fannkuch_steps(10) }))
+    let mut benchmark = Benchmark::new("rust-native", |b| {
+        b.iter(|| black_box(unsafe { wasm_bench_benchmarks::fannkuch_steps(5) }))
     })
-    .with_function("clif", |b| {
+    .with_function("wasmer-clif", |b| {
         let module = wasmer_runtime_core::compile_with(WASM, &CraneliftCompiler::new())
             .expect("should compile");
         let instance = module
@@ -443,7 +443,7 @@ fn fannkuck_benchmark(c: &mut Criterion) {
         let func: Func<(i32)> = instance.func("fannkuch_steps").unwrap();
         b.iter(|| black_box(func.call(5)))
     })
-    .with_function("llvm", |b| {
+    .with_function("wasmer-llvm", |b| {
         let module =
             wasmer_runtime_core::compile_with(WASM, &LLVMCompiler::new()).expect("should compile");
         let instance = module
@@ -452,7 +452,7 @@ fn fannkuck_benchmark(c: &mut Criterion) {
         let func: Func<(i32)> = instance.func("fannkuch_steps").unwrap();
         b.iter(|| black_box(func.call(5)))
     })
-    .with_function("dynasm", |b| {
+    .with_function("wasmer-dynasm", |b| {
         let module = wasmer_runtime_core::compile_with(WASM, &SinglePassCompiler::new())
             .expect("should compile");
         let instance = module
@@ -512,7 +512,7 @@ fn fannkuck_benchmark(c: &mut Criterion) {
                 exports: &mut exports as *mut wasm_extern_vec_t,
             };
 
-            benchmark = benchmark.with_function("v8", move |b| {
+            benchmark = benchmark.with_function("wasm-c-api-v8", move |b| {
                 let _env = &env;
                 let val1 = wasm_val_t__bindgen_ty_1 { i32: 5 };
                 let arg1 = wasm_val_t {
@@ -530,10 +530,10 @@ fn fannkuck_benchmark(c: &mut Criterion) {
 }
 
 fn sha1_benchmark(c: &mut Criterion) {
-    let mut benchmark = Benchmark::new("native", |b| {
+    let mut benchmark = Benchmark::new("rust-native", |b| {
         b.iter(|| black_box(unsafe { wasm_bench_benchmarks::sha1(1000) }))
     })
-    .with_function("clif", |b| {
+    .with_function("wasmer-clif", |b| {
         let module = wasmer_runtime_core::compile_with(WASM, &CraneliftCompiler::new())
             .expect("should compile");
         let instance = module
@@ -542,7 +542,7 @@ fn sha1_benchmark(c: &mut Criterion) {
         let func: Func<(i32)> = instance.func("sha1").unwrap();
         b.iter(|| black_box(func.call(1000)))
     })
-    .with_function("llvm", |b| {
+    .with_function("wasmer-llvm", |b| {
         let module =
             wasmer_runtime_core::compile_with(WASM, &LLVMCompiler::new()).expect("should compile");
         let instance = module
@@ -551,7 +551,7 @@ fn sha1_benchmark(c: &mut Criterion) {
         let func: Func<(i32)> = instance.func("sha1").unwrap();
         b.iter(|| black_box(func.call(1000)))
     })
-    .with_function("dynasm", |b| {
+    .with_function("wasmer-dynasm", |b| {
         let module = wasmer_runtime_core::compile_with(WASM, &SinglePassCompiler::new())
             .expect("should compile");
         let instance = module
@@ -611,7 +611,7 @@ fn sha1_benchmark(c: &mut Criterion) {
                 exports: &mut exports as *mut wasm_extern_vec_t,
             };
 
-            benchmark = benchmark.with_function("v8", move |b| {
+            benchmark = benchmark.with_function("wasm-c-api-v8", move |b| {
                 let _env = &env;
                 let val1 = wasm_val_t__bindgen_ty_1 { i32: 1000 };
                 let arg1 = wasm_val_t {
@@ -628,7 +628,7 @@ fn sha1_benchmark(c: &mut Criterion) {
     c.bench("sha1", benchmark);
 }
 
-// criterion_group!(benches, fannkuck_benchmark);
+//criterion_group!(benches, compile_benchmark);
 
 criterion_group!(
     benches,

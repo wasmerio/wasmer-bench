@@ -3,9 +3,10 @@ import csv
 import os
 
 BENCHMARK_OUT_DIR = "target/criterion"
-BENCHMARKS = ["small compile benchmark",
-              "large compile benchmark", "nbody", "sha1", "fib 30", "sum 1, 2"]
-BACKENDS = ["native", "clif",  "llvm", "dynasm", "v8", "wasmi"]
+BENCHMARKS = ["small_compile",
+              "large_compile", "fibonacci", "sha1", "sum", "nbody", "fannkuch"]
+BACKENDS = ["wasmer-clif", "rust-native",
+            "wasmer-llvm", "wasmer-dynasm", "wasm-c-api-v8", "wasmi"]
 
 
 def main():
@@ -25,12 +26,12 @@ def get_native_nanos():
         if "compile" in benchmark:
             native[benchmark] = None
         else:
-            native[benchmark] = get_average_nanos(benchmark, "native")
+            native[benchmark] = get_average_nanos(benchmark, "rust-native")
     return native
 
 
 def report_metric(benchmark, backend, native_nanos):
-    if backend == "native" and "compile" in benchmark:
+    if backend == "rust-native" and "compile" in benchmark:
         return
     if backend == "wasmi" and "compile" in benchmark:
         return

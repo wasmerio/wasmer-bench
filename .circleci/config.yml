@@ -28,7 +28,6 @@ jobs:
             export LLVM_SYS_70_PREFIX="`pwd`/clang+llvm-7.0.0-x86_64-linux-gnu-ubuntu-16.04/"
             export RAYON_NUM_THREADS=1
             make bench
-            python3 send_metrics.py
       - save_cache:
           paths:
             - /usr/local/cargo/registry

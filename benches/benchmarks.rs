@@ -104,6 +104,7 @@ mod wasm_c_api_support {
         pub module: *mut wasm_module_t,
         pub instance: *mut wasm_instance_t,
         pub exports: *mut wasm_extern_vec_t,
+        pub export_types: *mut wasm_exporttype_vec_t,
     }
     impl Drop for WasmCApiEnv {
         fn drop(&mut self) {
@@ -113,6 +114,7 @@ mod wasm_c_api_support {
                 wasm_instance_delete(self.instance);
                 wasm_store_delete(self.store);
                 wasm_engine_delete(self.engine);
+                wasm_exporttype_vec_delete(self.export_types);
             }
         }
     }
@@ -186,18 +188,43 @@ fn sum_benchmark(c: &mut Criterion) {
             let module = wasm_module_new(store, &bytes as *const wasm_byte_vec_t);
             let imports = &[];
             let instance = wasm_instance_new(store, module, imports.as_ptr());
+
+            // Get the export index for the name
+            let export_name = "sum";
+            let mut export_types: wasm_exporttype_vec_t = mem::uninitialized();
+            wasm_module_exports(module, &mut export_types as *mut wasm_exporttype_vec_t);
+            let export_types_slice = slice::from_raw_parts(export_types.data, export_types.size);
+            let mut index: Option<usize> = None;
+            for (i, _item) in export_types_slice.iter().enumerate() {
+                let wasm_name = wasm_exporttype_name(export_types_slice[i]);
+                let name_bytes: &[u8] =
+                    slice::from_raw_parts((*wasm_name).data as *const u8, (*wasm_name).size);
+                let name = str::from_utf8_unchecked(name_bytes);
+                if name == export_name {
+                    index = Some(i);
+                    break;
+                }
+            }
+            let index = if let Some(idx) = index {
+                idx
+            } else {
+                panic!("export name {} not found: ", export_name);
+            };
+
             let mut exports: wasm_extern_vec_t = mem::uninitialized();
             wasm_instance_exports(instance, &mut exports as *mut wasm_extern_vec_t);
             let data = exports.data;
             let size = exports.size;
             let exports_slice = slice::from_raw_parts(data, size);
-            let v8_func = wasm_extern_as_func(exports_slice[4]);
+            let v8_func = wasm_extern_as_func(exports_slice[index]);
+
             let env = WasmCApiEnv {
                 engine,
                 store,
                 module,
                 instance,
                 exports: &mut exports as *mut wasm_extern_vec_t,
+                export_types: &mut export_types as *mut wasm_exporttype_vec_t,
             };
 
             benchmark = benchmark.with_function("wasm-c-api-v8", move |b| {
@@ -295,18 +322,43 @@ fn fib_benchmark(c: &mut Criterion) {
             let module = wasm_module_new(store, &bytes as *const wasm_byte_vec_t);
             let imports = &[];
             let instance = wasm_instance_new(store, module, imports.as_ptr());
+
+            // Get the export index for the name
+            let export_name = "fib";
+            let mut export_types: wasm_exporttype_vec_t = mem::uninitialized();
+            wasm_module_exports(module, &mut export_types as *mut wasm_exporttype_vec_t);
+            let export_types_slice = slice::from_raw_parts(export_types.data, export_types.size);
+            let mut index: Option<usize> = None;
+            for (i, _item) in export_types_slice.iter().enumerate() {
+                let wasm_name = wasm_exporttype_name(export_types_slice[i]);
+                let name_bytes: &[u8] =
+                    slice::from_raw_parts((*wasm_name).data as *const u8, (*wasm_name).size);
+                let name = str::from_utf8_unchecked(name_bytes);
+                if name == export_name {
+                    index = Some(i);
+                    break;
+                }
+            }
+            let index = if let Some(idx) = index {
+                idx
+            } else {
+                panic!("export name {} not found: ", export_name);
+            };
+
             let mut exports: wasm_extern_vec_t = mem::uninitialized();
             wasm_instance_exports(instance, &mut exports as *mut wasm_extern_vec_t);
             let data = exports.data;
             let size = exports.size;
             let exports_slice = slice::from_raw_parts(data, size);
-            let v8_func = wasm_extern_as_func(exports_slice[6]);
+            let v8_func = wasm_extern_as_func(exports_slice[index]);
+
             let env = WasmCApiEnv {
                 engine,
                 store,
                 module,
                 instance,
                 exports: &mut exports as *mut wasm_extern_vec_t,
+                export_types: &mut export_types as *mut wasm_exporttype_vec_t,
             };
 
             benchmark = benchmark.with_function("wasm-c-api-v8", move |b| {
@@ -399,18 +451,42 @@ fn nbody_benchmark(c: &mut Criterion) {
             let module = wasm_module_new(store, &bytes as *const wasm_byte_vec_t);
             let imports = &[];
             let instance = wasm_instance_new(store, module, imports.as_ptr());
+
+            // Get the export index for the name
+            let export_name = "nbody_bench";
+            let mut export_types: wasm_exporttype_vec_t = mem::uninitialized();
+            wasm_module_exports(module, &mut export_types as *mut wasm_exporttype_vec_t);
+            let export_types_slice = slice::from_raw_parts(export_types.data, export_types.size);
+            let mut index: Option<usize> = None;
+            for (i, _item) in export_types_slice.iter().enumerate() {
+                let wasm_name = wasm_exporttype_name(export_types_slice[i]);
+                let name_bytes: &[u8] =
+                    slice::from_raw_parts((*wasm_name).data as *const u8, (*wasm_name).size);
+                let name = str::from_utf8_unchecked(name_bytes);
+                if name == export_name {
+                    index = Some(i);
+                    break;
+                }
+            }
+            let index = if let Some(idx) = index {
+                idx
+            } else {
+                panic!("export name {} not found: ", export_name);
+            };
+
             let mut exports: wasm_extern_vec_t = mem::uninitialized();
             wasm_instance_exports(instance, &mut exports as *mut wasm_extern_vec_t);
             let data = exports.data;
             let size = exports.size;
             let exports_slice = slice::from_raw_parts(data, size);
-            let v8_func = wasm_extern_as_func(exports_slice[5]);
+            let v8_func = wasm_extern_as_func(exports_slice[index]);
             let env = WasmCApiEnv {
                 engine,
                 store,
                 module,
                 instance,
                 exports: &mut exports as *mut wasm_extern_vec_t,
+                export_types: &mut export_types as *mut wasm_exporttype_vec_t,
             };
 
             benchmark = benchmark.with_function("wasm-c-api-v8", move |b| {
@@ -498,18 +574,43 @@ fn fannkuck_benchmark(c: &mut Criterion) {
             let module = wasm_module_new(store, &bytes as *const wasm_byte_vec_t);
             let imports = &[];
             let instance = wasm_instance_new(store, module, imports.as_ptr());
+
+            // Get the export index for the name
+            let export_name = "fannkuch_steps";
+            let mut export_types: wasm_exporttype_vec_t = mem::uninitialized();
+            wasm_module_exports(module, &mut export_types as *mut wasm_exporttype_vec_t);
+            let export_types_slice = slice::from_raw_parts(export_types.data, export_types.size);
+            let mut index: Option<usize> = None;
+            for (i, _item) in export_types_slice.iter().enumerate() {
+                let wasm_name = wasm_exporttype_name(export_types_slice[i]);
+                let name_bytes: &[u8] =
+                    slice::from_raw_parts((*wasm_name).data as *const u8, (*wasm_name).size);
+                let name = str::from_utf8_unchecked(name_bytes);
+                if name == export_name {
+                    index = Some(i);
+                    break;
+                }
+            }
+            let index = if let Some(idx) = index {
+                idx
+            } else {
+                panic!("export name {} not found: ", export_name);
+            };
+
             let mut exports: wasm_extern_vec_t = mem::uninitialized();
             wasm_instance_exports(instance, &mut exports as *mut wasm_extern_vec_t);
             let data = exports.data;
             let size = exports.size;
             let exports_slice = slice::from_raw_parts(data, size);
-            let v8_func = wasm_extern_as_func(exports_slice[8]);
+            let v8_func = wasm_extern_as_func(exports_slice[index]);
+
             let env = WasmCApiEnv {
                 engine,
                 store,
                 module,
                 instance,
                 exports: &mut exports as *mut wasm_extern_vec_t,
+                export_types: &mut export_types as *mut wasm_exporttype_vec_t,
             };
 
             benchmark = benchmark.with_function("wasm-c-api-v8", move |b| {
@@ -597,18 +698,43 @@ fn sha1_benchmark(c: &mut Criterion) {
             let module = wasm_module_new(store, &bytes as *const wasm_byte_vec_t);
             let imports = &[];
             let instance = wasm_instance_new(store, module, imports.as_ptr());
+
+            // Get the export index for the name
+            let export_name = "sha1";
+            let mut export_types: wasm_exporttype_vec_t = mem::uninitialized();
+            wasm_module_exports(module, &mut export_types as *mut wasm_exporttype_vec_t);
+            let export_types_slice = slice::from_raw_parts(export_types.data, export_types.size);
+            let mut index: Option<usize> = None;
+            for (i, _item) in export_types_slice.iter().enumerate() {
+                let wasm_name = wasm_exporttype_name(export_types_slice[i]);
+                let name_bytes: &[u8] =
+                    slice::from_raw_parts((*wasm_name).data as *const u8, (*wasm_name).size);
+                let name = str::from_utf8_unchecked(name_bytes);
+                if name == export_name {
+                    index = Some(i);
+                    break;
+                }
+            }
+            let index = if let Some(idx) = index {
+                idx
+            } else {
+                panic!("export name {} not found: ", export_name);
+            };
+
             let mut exports: wasm_extern_vec_t = mem::uninitialized();
             wasm_instance_exports(instance, &mut exports as *mut wasm_extern_vec_t);
             let data = exports.data;
             let size = exports.size;
             let exports_slice = slice::from_raw_parts(data, size);
-            let v8_func = wasm_extern_as_func(exports_slice[9]);
+            let v8_func = wasm_extern_as_func(exports_slice[index]);
+
             let env = WasmCApiEnv {
                 engine,
                 store,
                 module,
                 instance,
                 exports: &mut exports as *mut wasm_extern_vec_t,
+                export_types: &mut export_types as *mut wasm_exporttype_vec_t,
             };
 
             benchmark = benchmark.with_function("wasm-c-api-v8", move |b| {
@@ -628,10 +754,11 @@ fn sha1_benchmark(c: &mut Criterion) {
     c.bench("sha1", benchmark);
 }
 
-//criterion_group!(benches, compile_benchmark);
+// criterion_group!(benches, fannkuck_benchmark);
 
 criterion_group!(
     benches,
+    fannkuck_benchmark,
     fib_benchmark,
     sha1_benchmark,
     sum_benchmark,

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import csv
 import os
+import statistics
 
 BENCHMARK_OUT_DIR = "target/criterion"
 BENCHMARKS = ["small_compile",
@@ -56,12 +57,14 @@ def get_average_nanos(benchmark, backend):
     count = 0
     exists = os.path.isfile(filename)
     if exists:
+        data = []
         with open(filename) as csvdatafile:
             reader = csv.DictReader(csvdatafile)
             for row in reader:
-                total_nanos += float(row['sample_time_nanos'])
-                count += int(row['iteration_count'])
-        return total_nanos / count
+                total_nanos = float(row['sample_time_nanos'])
+                iters = int(row['iteration_count'])
+                data.append(total_nanos / iters)
+        return statistics.mean(data)
     else:
         return None
 

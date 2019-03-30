@@ -2,6 +2,7 @@
 import csv
 import os
 import toml  # pip install toml
+import statistics
 
 # https://github.com/AlekSi/codespeed-client
 # pip install codespeed-client
@@ -9,8 +10,8 @@ from codespeed_client import Client
 
 BENCHMARK_OUT_DIR = "target/criterion"
 BENCHMARKS = ["small_compile",
-              "large_compile", "fibonacci", "sha1", "sum", "nbody","fannkuch"]
-#BENCHMARKS = ["fannkuch"]
+              "large_compile", "fibonacci", "sha1", "sum", "nbody", "fannkuch"]
+# BENCHMARKS = ["fannkuch"]
 BACKENDS = ["wasmer-clif", "rust-native",
             "wasmer-llvm", "wasmer-dynasm", "wasm-c-api-v8", "wasmi"]
 BACKEND_TO_PROJECT = {'wasmer-clif': 'wasmer', 'wasmi': 'wasmi', 'wasmer-dynasm': 'wasmer',
@@ -44,25 +45,36 @@ def get_metric(benchmark, backend):
         return None
     if backend == "wasmi" and "compile" in benchmark:
         return None
-    avg_nanos = get_average_nanos(benchmark, backend)
-    if avg_nanos is None:
+    stats_nanos = get_stats_nanos(benchmark, backend)
+    if stats_nanos is None:
         return None
     else:
-        return {'backend': backend, 'benchmark': benchmark, 'avg_nanos': avg_nanos}
+        return {'backend': backend, 'benchmark': benchmark, 'stats': stats_nanos}
 
 
-def get_average_nanos(benchmark, backend):
+def get_stats_nanos(benchmark, backend):
     filename = BENCHMARK_OUT_DIR + "/" + benchmark + "/" + backend + "/new/raw.csv"
     total_nanos = 0.0
     count = 0
     exists = os.path.isfile(filename)
     if exists:
+        min = None
+        max = None
         with open(filename) as csvdatafile:
             reader = csv.DictReader(csvdatafile)
+            data = []
             for row in reader:
-                total_nanos += float(row['sample_time_nanos'])
-                count += int(row['iteration_count'])
-            return total_nanos / count
+                total_nanos = float(row['sample_time_nanos'])
+                iters = int(row['iteration_count'])
+                nanos = total_nanos / iters
+                if min is None or nanos < min:
+                    min = nanos
+                if max is None or nanos > max:
+                    max = nanos
+                data.append(nanos)
+            stdev = statistics.stdev(data)
+            mean = statistics.mean(data)
+            return {'average': mean, 'min': min, 'max': max, 'stdev': stdev}
     else:
         return None
 
@@ -89,16 +101,21 @@ def get_commit_id(project):
 
 
 def send_metrics(metrics):
-    #print("Sending metrics:")
+    # print("Sending metrics:")
     # print(metrics)
     client = Client('https://speed.wasmer.io',
                     environment='local-machine-1')
     results = []
     for metric in metrics:
-        seconds = metric['avg_nanos'] / 1000000000
+        stats = metric['stats']
+        seconds = stats['average'] / 1000000000
+        min = stats['min'] / 1000000000
+        max = stats['max'] / 1000000000
+        stdev = stats['stdev'] / 1000000000
         project = BACKEND_TO_PROJECT[metric['backend']]
         commit_id = get_commit_id(project)
         result = {'executable': metric['backend'], 'commitid': commit_id,
+                  'min': min, 'max': max, 'std_dev': stdev,
                   'benchmark': metric['benchmark'], 'result_value': seconds, 'project': project}
         results.append(result)
         client.add_result(**result)

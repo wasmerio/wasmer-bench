@@ -31,4 +31,5 @@ harness = false
 [features]
 v8 = ["rust-wasm-c-api"]
 bench-wasmi = ["wasmi"]
+fast = []
 

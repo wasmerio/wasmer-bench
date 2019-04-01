@@ -63,6 +63,12 @@ fn compile_benchmark(c: &mut Criterion) {
         })
     });
 
+    #[cfg(feature = "fast")]
+    {
+        small_benchmark = small_benchmark.sample_size(2);
+    }
+
+
     c.bench("small_compile", small_benchmark);
 
     let mut large_benchmark = Benchmark::new("wasmer-clif", |b| {
@@ -91,6 +97,13 @@ fn compile_benchmark(c: &mut Criterion) {
             )
         })
     });
+
+
+    #[cfg(feature = "fast")]
+    {
+      large_benchmark = large_benchmark.sample_size(2);
+    }
+
 
     c.bench("large_compile", large_benchmark);
 }
@@ -251,6 +264,11 @@ fn sum_benchmark(c: &mut Criterion) {
         }
     }
 
+    #[cfg(feature = "fast")]
+    {
+      benchmark = benchmark.sample_size(2);
+    }
+
     c.bench("sum", benchmark);
 }
 
@@ -380,6 +398,11 @@ fn fib_benchmark(c: &mut Criterion) {
         }
     }
 
+    #[cfg(feature = "fast")]
+    {
+      benchmark = benchmark.sample_size(2);
+    }
+
     c.bench("fibonacci", benchmark);
 }
 
@@ -501,6 +524,11 @@ fn nbody_benchmark(c: &mut Criterion) {
                 b.iter(|| black_box(wasm_func_call(v8_func, args.as_ptr(), results.as_mut_ptr())))
             });
         }
+    }
+
+    #[cfg(feature = "fast")]
+    {
+      benchmark = benchmark.sample_size(2);
     }
 
     c.bench("nbody", benchmark);
@@ -627,6 +655,11 @@ fn fannkuck_benchmark(c: &mut Criterion) {
         }
     }
 
+    #[cfg(feature = "fast")]
+    {
+      benchmark = benchmark.sample_size(2);
+    }
+
     c.bench("fannkuch", benchmark);
 }
 
@@ -749,6 +782,11 @@ fn sha1_benchmark(c: &mut Criterion) {
                 b.iter(|| black_box(wasm_func_call(v8_func, args.as_ptr(), results.as_mut_ptr())))
             });
         }
+    }
+
+    #[cfg(feature = "fast")]
+    {
+      benchmark = benchmark.sample_size(2);
     }
 
     c.bench("sha1", benchmark);

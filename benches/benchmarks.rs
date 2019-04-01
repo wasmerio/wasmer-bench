@@ -131,6 +131,32 @@ mod wasm_c_api_support {
             }
         }
     }
+
+    pub unsafe fn export_index_from_name(export_types: wasm_exporttype_vec_t, export_name: &str) -> usize {
+        use std::str;
+        use std::mem;
+        use std::slice;
+        let export_types_slice = slice::from_raw_parts(export_types.data, export_types.size);
+        let mut index: Option<usize> = None;
+        for (i, _item) in export_types_slice.iter().enumerate() {
+            let wasm_name = wasm_exporttype_name(export_types_slice[i]);
+            let name_bytes: &[u8] =
+                slice::from_raw_parts((*wasm_name).data as *const u8, (*wasm_name).size);
+            let name = str::from_utf8_unchecked(name_bytes);
+            if name == export_name {
+                index = Some(i);
+                break;
+            }
+        }
+        let index = if let Some(idx) = index {
+            idx
+        } else {
+            panic!("export name {} not found: ", export_name);
+        };
+        index
+    }
+
+
 }
 
 fn sum_benchmark(c: &mut Criterion) {
@@ -416,6 +442,10 @@ fn nbody_benchmark(c: &mut Criterion) {
         let instance = module
             .instantiate(&ImportObject::new())
             .expect("should instantiate");
+        
+        let init_func: Func<()> = instance.func("init").unwrap();
+        init_func.call().unwrap();
+
         let func: Func<(i32)> = instance.func("nbody_bench").unwrap();
         b.iter(|| black_box(func.call(5000)))
     })
@@ -425,6 +455,10 @@ fn nbody_benchmark(c: &mut Criterion) {
         let instance = module
             .instantiate(&ImportObject::new())
             .expect("should instantiate");
+
+        let init_func: Func<()> = instance.func("init").unwrap();
+        init_func.call().unwrap();
+
         let func: Func<(i32)> = instance.func("nbody_bench").unwrap();
         b.iter(|| black_box(func.call(5000)))
     })
@@ -434,6 +468,10 @@ fn nbody_benchmark(c: &mut Criterion) {
         let instance = module
             .instantiate(&ImportObject::new())
             .expect("should instantiate");
+
+        let init_func: Func<()> = instance.func("init").unwrap();
+        init_func.call().unwrap();
+
         let func: Func<(i32)> = instance.func("nbody_bench").unwrap();
         b.iter(|| black_box(func.call(5000)))
     });
@@ -445,6 +483,13 @@ fn nbody_benchmark(c: &mut Criterion) {
             let instance = ModuleInstance::new(&module, &ImportsBuilder::default())
                 .expect("error instantiating module")
                 .assert_no_start();
+
+            instance.invoke_export(
+                    "init",
+                    &[],
+                    &mut NopExternals,
+                );
+
             b.iter(|| {
                 black_box(instance.invoke_export(
                     "nbody_bench",
@@ -457,7 +502,7 @@ fn nbody_benchmark(c: &mut Criterion) {
 
     #[cfg(feature = "v8")]
     {
-        use wasm_c_api_support::WasmCApiEnv;
+        use wasm_c_api_support::*;
         unsafe {
             use std::mem;
             use std::slice;
@@ -476,26 +521,11 @@ fn nbody_benchmark(c: &mut Criterion) {
             let instance = wasm_instance_new(store, module, imports.as_ptr());
 
             // Get the export index for the name
-            let export_name = "nbody_bench";
             let mut export_types: wasm_exporttype_vec_t = mem::uninitialized();
             wasm_module_exports(module, &mut export_types as *mut wasm_exporttype_vec_t);
-            let export_types_slice = slice::from_raw_parts(export_types.data, export_types.size);
-            let mut index: Option<usize> = None;
-            for (i, _item) in export_types_slice.iter().enumerate() {
-                let wasm_name = wasm_exporttype_name(export_types_slice[i]);
-                let name_bytes: &[u8] =
-                    slice::from_raw_parts((*wasm_name).data as *const u8, (*wasm_name).size);
-                let name = str::from_utf8_unchecked(name_bytes);
-                if name == export_name {
-                    index = Some(i);
-                    break;
-                }
-            }
-            let index = if let Some(idx) = index {
-                idx
-            } else {
-                panic!("export name {} not found: ", export_name);
-            };
+
+            let export_name = "nbody_bench";
+            let index = export_index_from_name(export_types, export_name);
 
             let mut exports: wasm_extern_vec_t = mem::uninitialized();
             wasm_instance_exports(instance, &mut exports as *mut wasm_extern_vec_t);
@@ -503,6 +533,13 @@ fn nbody_benchmark(c: &mut Criterion) {
             let size = exports.size;
             let exports_slice = slice::from_raw_parts(data, size);
             let v8_func = wasm_extern_as_func(exports_slice[index]);
+
+            let init_index = export_index_from_name(export_types, "init");
+            let init_args = [];
+            let init_results: &mut [wasm_val_t] = &mut [];
+            let init_func = wasm_extern_as_func(exports_slice[init_index]);
+            wasm_func_call(init_func, init_args.as_ptr(), init_results.as_mut_ptr());
+
             let env = WasmCApiEnv {
                 engine,
                 store,

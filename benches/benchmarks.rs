@@ -571,7 +571,7 @@ fn nbody_benchmark(c: &mut Criterion) {
     c.bench("nbody", benchmark);
 }
 
-fn fannkuck_benchmark(c: &mut Criterion) {
+fn fannkuch_benchmark(c: &mut Criterion) {
     let mut benchmark = Benchmark::new("rust-native", |b| {
         b.iter(|| black_box(unsafe { wasm_bench_benchmarks::fannkuch_steps(5) }))
     })
@@ -829,11 +829,11 @@ fn sha1_benchmark(c: &mut Criterion) {
     c.bench("sha1", benchmark);
 }
 
-// criterion_group!(benches, fannkuck_benchmark);
+// criterion_group!(benches, fannkuch_benchmark);
 
 criterion_group!(
     benches,
-    fannkuck_benchmark,
+    fannkuch_benchmark,
     fib_benchmark,
     sha1_benchmark,
     sum_benchmark,

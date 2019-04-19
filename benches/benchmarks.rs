@@ -7,7 +7,7 @@ extern crate rust_wasm_c_api;
 use rust_wasm_c_api::*;
 
 extern crate wasmer_clif_backend;
-extern crate wasmer_dynasm_backend;
+extern crate wasmer_singlepass_backend;
 extern crate wasmer_llvm_backend;
 extern crate wasmer_runtime_core;
 
@@ -29,7 +29,7 @@ static LARGE_WASM: &'static [u8] = include_bytes!("../benchmarks/src/lua.wasm");
 use criterion::*;
 use wasm_bench_benchmarks;
 use wasmer_clif_backend::CraneliftCompiler;
-use wasmer_dynasm_backend::SinglePassCompiler;
+use wasmer_singlepass_backend::SinglePassCompiler;
 use wasmer_llvm_backend::LLVMCompiler;
 
 #[cfg(feature = "bench-wasmi")]

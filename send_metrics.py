@@ -22,7 +22,7 @@ V8_COMMIT = "e0ea8246c6ad7b698643995ba25da09d7012f679"
 
 # `rustc +nightly --version`,
 # find full commit in https://github.com/rust-lang/rust/commit/{short-id}
-RUST_COMMIT = "88f755f8a84df1d9e6b17cf10c96ae8b93481b2e"
+RUST_COMMIT = "3c3d3c1777041200bb7ed7a65b6562d62899778c"
 
 # Check commit in https://github.com/paritytech/wasmi
 # corresponding to the version in Cargo.toml

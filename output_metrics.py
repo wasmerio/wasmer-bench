@@ -43,10 +43,10 @@ def report_metric(benchmark, backend, native_nanos):
     if avg_nanos is not None:
         ratio = "N/A" if native_nanos is None else '%0.2f' % (
             avg_nanos / native_nanos)
-        out = '%-24s%-12s%-12i%-12s' % (benchmark,
+        out = '%-24s%-14s%-14i%-12s' % (benchmark,
                                         backend, avg_nanos, ratio)
     else:
-        out = '%-24s%-12s%-12s%-12s' % (benchmark,
+        out = '%-24s%-14s%-14s%-12s' % (benchmark,
                                         backend, "--", "--")
     print(out)
 

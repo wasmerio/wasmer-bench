@@ -17,6 +17,10 @@ rustup install nightly
 rustup target add wasm32-unknown-unknown --toolchain nightly
 ```
 
+## Update to latest Wasmer
+```bash
+cargo update```
+
 ## Build & Run
 
 ```bash

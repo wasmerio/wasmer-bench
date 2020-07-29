@@ -111,20 +111,22 @@ def get_commit_id(project):
 
 # Used for reporting where the benchmark was run
 def get_environment_name():
-    # The network name of this computer
-    node_name = platform.node()
-    system = platform.system()
-    architecture = platform.machine()
-    release = platform.release()
+    ## The network name of this computer
+    #node_name = platform.node()
+    #system = platform.system()
+    #architecture = platform.machine()
+    #release = platform.release()
 
-    system_name = "{node_name} {architecture} {system} {release}".format(
-        node_name=node_name,
-        architecture=architecture,
-        system=system,
-        release=release)
+    #system_name = "{node_name} {architecture} {system} {release}".format(
+    #    node_name=node_name,
+    #    architecture=architecture,
+    #    system=system,
+    #    release=release)
 
     if running_on_github_actions():
-        return "GITHUB ACTIONS: " + system_name
+        #return "GITHUB ACTIONS: " + system_name
+        # temp name for testing
+        return "GITHUB ACTIONS TEST"
     else:
         return node_name
 

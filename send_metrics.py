@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import csv
 import os
+import platform
 import toml  # pip install toml
 import statistics
 
@@ -37,6 +38,7 @@ def main():
         for backend in BACKENDS:
             metric = get_metric(benchmark, backend)
             if metric is not None:
+                print(metric)
                 metrics.append(metric)
     send_metrics(metrics)
 
@@ -65,7 +67,8 @@ def get_stats_nanos(benchmark, backend):
             reader = csv.DictReader(csvdatafile)
             data = []
             for row in reader:
-                total_nanos = float(row['sample_time_nanos'])
+                total_nanos = float(row['sample_measured_value'])
+                assert (row['unit'] == 'ns'),"measured value is not in nanoseconds! unhandeled case!"
                 iters = int(row['iteration_count'])
                 nanos = total_nanos / iters
                 if min is None or nanos < min:
@@ -87,9 +90,15 @@ def get_commit_from_cargo_lock(package):
             return p['source'].split("#")[1]
     return None
 
+def running_on_github_actions():
+    return os.environ.get('GITHUB_ACTIONS') == 'true'
 
 def get_commit_id(project):
-    if project == "wasmer":
+    # todo clean up before shipping
+    return "cfd02916a9c6a8433a4c33085041da2015fb9cf8"
+    if running_on_github_actions():
+        return os.environ('GITHUB_SHA')
+    elif project == "wasmer":
         return get_commit_from_cargo_lock("wasmer-vm")
     elif project == "v8":
         return V8_COMMIT
@@ -100,12 +109,48 @@ def get_commit_id(project):
     else:
         raise Exception('unknown project: ' + project)
 
+# Used for reporting where the benchmark was run
+def get_environment_name():
+    # The network name of this computer
+    node_name = platform.node()
+    system = platform.system()
+    architecture = platform.machine()
+    release = platform.release()
+
+    system_name = "{node_name} {architecture} {system} {release}".format(
+        node_name=node_name,
+        architecture=architecture,
+        system=system,
+        release=release)
+
+    if running_on_github_actions():
+        return "GITHUB ACTIONS: " + system_name
+    else:
+        return node_name
+
+## Extra information about the enivronment
+#def env_metadata():
+#    if os.environ.get('GITHUB_ACTIONS') == 'true':
+#        # WORKFLOW is the name of the workflow
+#        workflow_name = os.environ.get('GITHUB_WORKFLOW')
+#        # RUN_ID is the unique ID per Action run
+#        # RUN_ID does not change if the Action is re-run
+#        run_id = os.environ.get('GITHUB_RUN_ID')
+#        # RUN NUMBER is the number of times it has been run
+#        # This number disambiguates which re-run of the Action this is
+#        run_number = os.environ.get('GITHUB_RUN_NUMBER')
+#
+#        return str({'workflow_name': workflow_name,
+#                    'run_id': run_id,
+#                    'run_number': run_number})
+
 
 def send_metrics(metrics):
     # print("Sending metrics:")
     # print(metrics)
+    environment = get_environment_name()
     client = Client('https://speed.wasmer.io',
-                    environment='local-machine-1')
+                    environment=environment)
     results = []
     for metric in metrics:
         stats = metric['stats']
@@ -115,6 +160,7 @@ def send_metrics(metrics):
         stdev = stats['stdev'] / 1000000000
         project = BACKEND_TO_PROJECT[metric['backend']]
         commit_id = get_commit_id(project)
+
         result = {'executable': metric['backend'], 'commitid': commit_id,
                   'min': min, 'max': max, 'std_dev': stdev,
                   'benchmark': metric['benchmark'], 'result_value': seconds, 'project': project}

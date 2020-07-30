@@ -14,10 +14,13 @@ BENCHMARKS = ["small_compile",
               "large_compile", "fibonacci", "sha1", "sum", "nbody", "fannkuch",
               "basic dynfunc", "basic static func", "basic dynfunc with many args", "basic static func with many args"]
 # BENCHMARKS = ["fannkuch"]
-BACKENDS = ["cranelift", "rust-native",
-            "llvm", "singlepass", "wasm-c-api-v8", "wasmi"]
-BACKEND_TO_PROJECT = {'cranelift': 'wasmer', 'wasmi': 'wasmi', 'singlepass': 'wasmer',
+BACKENDS = ["wasmer-clif", "rust-native",
+            "wasmer-llvm", "wasmer-dynasm", "wasm-c-api-v8", "wasmi"]
+BACKEND_TO_PROJECT = {'wasmer-clif': 'wasmer', 'wasmi': 'wasmi', 'wasmer-dynasm': 'wasmer',
                       'rust-native': 'rust', 'llvm': 'wasmer', 'wasm-c-api-v8': 'v8'}
+
+LEGACY_NAME_TO_NAME = {'wasmer-clif': 'cranelift', 'wasmi': 'wasmi', 'wasmer-dynasm': 'singlepass',
+                      'rust-native': 'rust-native', 'wasmer-llvm': 'llvm', 'wasm-c-api-v8': 'wasm-c-api-v8'}
 
 # `git rev-parse HEAD` in the wasm-c-api/v8/v8 directory
 V8_COMMIT = "e0ea8246c6ad7b698643995ba25da09d7012f679"
@@ -56,7 +59,8 @@ def get_metric(benchmark, backend):
 
 
 def get_stats_nanos(benchmark, backend):
-    filename = BENCHMARK_OUT_DIR + "/" + benchmark + " " + backend + "/new/raw.csv"
+    backend_name = LEGACY_NAME_TO_NAME[backend]
+    filename = BENCHMARK_OUT_DIR + "/" + benchmark + " " + backend_name + "/new/raw.csv"
     total_nanos = 0.0
     count = 0
     exists = os.path.isfile(filename)
@@ -112,7 +116,7 @@ def get_commit_id(project):
 # Used for reporting where the benchmark was run
 def get_environment_name():
     ## The network name of this computer
-    #node_name = platform.node()
+    node_name = platform.node()
     #system = platform.system()
     #architecture = platform.machine()
     #release = platform.release()

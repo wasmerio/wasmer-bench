@@ -130,7 +130,7 @@ def get_environment_name():
     if running_on_github_actions():
         #return "GITHUB ACTIONS: " + system_name
         # temp name for testing
-        return "GITHUB ACTIONS TEST"
+        return "GITHUB_ACTIONS_TEST"
     else:
         return node_name
 

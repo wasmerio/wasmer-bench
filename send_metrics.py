@@ -98,8 +98,6 @@ def running_on_github_actions():
     return os.environ.get('GITHUB_ACTIONS') == 'true'
 
 def get_commit_id(project):
-    # todo clean up before shipping
-    return "cfd02916a9c6a8433a4c33085041da2015fb9cf8"
     if running_on_github_actions():
         return os.environ('GITHUB_SHA')
     elif project == "wasmer":

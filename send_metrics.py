@@ -99,7 +99,7 @@ def running_on_github_actions():
 
 def get_commit_id(project):
     if running_on_github_actions():
-        return os.environ('GITHUB_SHA')
+        return os.environ.get('GITHUB_SHA')
     elif project == "wasmer":
         return get_commit_from_cargo_lock("wasmer-vm")
     elif project == "v8":

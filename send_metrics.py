@@ -17,7 +17,7 @@ BENCHMARKS = ["small_compile",
 BACKENDS = ["wasmer-clif", "rust-native",
             "wasmer-llvm", "wasmer-dynasm", "wasm-c-api-v8", "wasmi"]
 BACKEND_TO_PROJECT = {'wasmer-clif': 'wasmer', 'wasmi': 'wasmi', 'wasmer-dynasm': 'wasmer',
-                      'rust-native': 'rust', 'llvm': 'wasmer', 'wasm-c-api-v8': 'v8'}
+                      'rust-native': 'rust', 'wasmer-llvm': 'wasmer', 'wasm-c-api-v8': 'v8'}
 
 LEGACY_NAME_TO_NAME = {'wasmer-clif': 'cranelift', 'wasmi': 'wasmi', 'wasmer-dynasm': 'singlepass',
                       'rust-native': 'rust-native', 'wasmer-llvm': 'llvm', 'wasm-c-api-v8': 'wasm-c-api-v8'}
